@@ -14,7 +14,7 @@ This is a python script whihc can be run to collec the basic details of the clus
 
 2. Run the python script 
     ```sh
-    python nkp-ad-built.py
+    python nkp-as-built.py
     ```
 
 3. After successful completion of the script, the output will be available in te same directory - cluster_details.html
