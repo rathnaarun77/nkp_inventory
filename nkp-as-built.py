@@ -246,11 +246,12 @@ def get_nkp_dkp_level():
         return None
 
 if __name__ == "__main__":
+    # Fetching configuration for Kommander cluster
     version, airgapped, kommander_cluster_name = get_kommander_config()
     print(f"\nKommander Cluster Name: {kommander_cluster_name}")
     print(f"NKP Version: {version}")
     print(f"Airgapped: {airgapped}\n")
-    
+
     # Fetching the NKP license tier
     dkp_level = get_nkp_dkp_level()
     print(f"NKP Licence Tier: {dkp_level}")
@@ -260,23 +261,38 @@ if __name__ == "__main__":
 
     html_output = ""
 
-    # First, fetch and print the Kommander cluster details
+    # Start the HTML output with the title and basic information
+    html_output += "<html><head><title>NKP Basic Inventory</title></head><body>"
+    html_output += "<h1>NKP Basic Inventory</h1>"
+    
+    # Add Kommander cluster details at the top
+    html_output += "<h2>Kommander Cluster Details</h2>"
+    html_output += "<table border='1'>"
+    html_output += f"<tr><th>Kommander Cluster Name</th><td>{kommander_cluster_name}</td></tr>"
+    html_output += f"<tr><th>NKP Version</th><td>{version}</td></tr>"
+    html_output += f"<tr><th>Airgapped</th><td>{airgapped}</td></tr>"
+    html_output += "</table><br>"
+
+    # Now, fetch and add the details for the Kommander cluster (first cluster)
     kommander_cluster = next((cluster for cluster in clusters if cluster['clustername'] == kommander_cluster_name), None)
     if kommander_cluster:
         namespace = kommander_cluster["namespace"]
         cluster_name = kommander_cluster["clustername"]
-        print(f"\nFetching YAML for Kommander cluster '{cluster_name}' in namespace '{namespace}'...")
+        print(f"\nFetching details for Kommander cluster '{cluster_name}' in namespace '{namespace}'...")
         cluster_yaml = get_cluster_yaml(namespace, cluster_name)
         html_output += generate_html_table(cluster_name, cluster_yaml)
 
-    # Now, process the remaining clusters (excluding Kommander)
+    # Process the remaining clusters (excluding Kommander)
     for cluster in clusters:
         if cluster['clustername'] != kommander_cluster_name:
             namespace = cluster["namespace"]
             cluster_name = cluster["clustername"]
-            print(f"\nFetching YAML for cluster '{cluster_name}' in namespace '{namespace}'...")
+            print(f"\nFetching details for cluster '{cluster_name}' in namespace '{namespace}'...")
             cluster_yaml = get_cluster_yaml(namespace, cluster_name)
             html_output += generate_html_table(cluster_name, cluster_yaml)
+
+    # End the HTML output
+    html_output += "</body></html>"
 
     # Save the HTML output
     save_html_output(html_output)
