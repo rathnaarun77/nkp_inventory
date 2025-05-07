@@ -1,7 +1,7 @@
 # NKP Basic Inventory
 
 ## Overview
-This is a python script whihc can be run to collec the basic details of the cluster, for completing the as-built guide.
+This is a python script which can be run to collect the basic details of the NKP cluster, for completing the as-built guide.
 
 
 ## Usage
