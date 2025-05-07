@@ -1,6 +1,5 @@
 import subprocess
 import yaml
-from datetime import datetime
 
 def get_clusters():
     try:
@@ -91,7 +90,9 @@ def get_kommander_config(namespace='default'):
         print(f"Error retrieving Kommander config: {e}")
         return 'N/A', 'N/A', 'N/A'
 
-def generate_html_table(cluster_name, cluster_yaml):
+
+
+def print_cluster_details(cluster_name, cluster_yaml):
     topology = cluster_yaml.get('spec', {}).get('topology', {})
     control_plane = topology.get('controlPlane', {})
     worker_pools = topology.get('workers', {}).get('machineDeployments', [])
@@ -164,62 +165,57 @@ def generate_html_table(cluster_name, cluster_yaml):
         if worker_details:
             worker_configs.append(worker_details)
 
-    html_content = f"<h2>Cluster: {cluster_name}</h2>"
-    html_content += f"<table border='1'><tr><th>Kubernetes Version</th><td>{kubernetes_version}</td></tr>"
-    html_content += f"<tr><th>Control Plane Endpoint</th><td>{control_plane_endpoint}</td></tr>"
-    html_content += f"<tr><th>CNI Provider</th><td>{cni_provider}</td></tr>"
-    html_content += f"<tr><th>Storage Container</th><td>{storage_container}</td></tr>"
-    html_content += f"<tr><th>Global Image Registry</th><td>{global_image_registry}</td></tr>"
+    # Print cluster metadata
+    print(f"\nCluster: {cluster_name}")
+    print(f"Kubernetes Version: {kubernetes_version}")
+    print(f"Control Plane Endpoint: {control_plane_endpoint}")
+    print(f"CNI Provider: {cni_provider}")
+    print(f"Storage Container: {storage_container}")
+    print(f"Global Image Registry: {global_image_registry}")
 
-    html_content += "<tr><th>Service LoadBalancer Address Range</th><td>"
+    print("Service LoadBalancer Address Range:")
     for range in service_lb_range:
-        html_content += f"Start: {range.get('start')}, End: {range.get('end')}<br>"
-    html_content += "</td></tr>"
+        print(f"  Start: {range.get('start')}, End: {range.get('end')}")
 
-    html_content += "<tr><th>Image Registries</th><td>"
+    print("Image Registries:")
     for url in image_registry_urls:
-        html_content += f"- {url}<br>"
-    html_content += "</td></tr>"
+        print(f"  - {url}")
 
-    html_content += "<tr><th>Controlplane Configuration</th><td>"
+    print("Controlplane Configuration:")
     for key, val in cp_info.items():
+        if key == 'controlPlaneRef':
+            continue  # skip printing controlPlaneRef itself
         if isinstance(val, list):
             val = ", ".join(val)
-        html_content += f"<b>{key}</b>: {val}<br>"
-    html_content += "</td></tr>"
+        print(f"  {key}: {val}")
 
-    html_content += "<tr><th>Worker Configuration</th><td>"
+    print("Worker Configuration:")
     for worker in worker_configs:
-        html_content += f"<b>Worker Name:</b> {worker['workerName']}<br>"
+        print(f"  Worker Name: {worker['workerName']}")
         for key, val in worker.items():
             if key == 'workerName':
                 continue
             if isinstance(val, list):
                 val = ", ".join(val)
-            html_content += f"<b>{key}</b>: {val}<br>"
-    html_content += "</td></tr>"
+            print(f"    {key}: {val}")
 
-    # Controlplane and Worker nodes
-    html_content += "<tr><th>Controlplane Nodes</th><td>"
+    # Fetch and print matching machine node names
+    print("Controlplane Nodes:")
     cp_nodes = get_node_names_by_pool(cluster_name, cp_pool_name)
     for node in cp_nodes:
-        html_content += f"- {node}<br>"
-    html_content += "</td></tr>"
+        print(f"  - {node}")
 
-    html_content += "<tr><th>Worker Nodes</th><td>"
+    print("Worker Nodes:")
     for worker in worker_configs:
         worker_nodes = get_node_names_by_pool(cluster_name, worker["workerName"])
-        html_content += f"<b>Worker Pool:</b> {worker['workerName']}<br>"
+        print(f"  Worker Pool: {worker['workerName']}")
         for node in worker_nodes:
-            html_content += f"- {node}<br>"
-    html_content += "</td></tr></table><br>"
-
-    return html_content
+            print(f"    - {node}")
 
 def save_html_output(html_content, filename="cluster_details.html"):
     with open(filename, "w") as file:
-        file.write(f"<html><head><title>Cluster Details</title></head><body>{html_content}</body></html>")
-
+        file.write(html_content)
+        
 def get_nkp_dkp_level():
     try:
         result = subprocess.run(
@@ -245,6 +241,9 @@ def get_nkp_dkp_level():
         print("Failed to parse YAML:", str(ye))
         return None
 
+
+
+
 if __name__ == "__main__":
     version, airgapped, kommander_cluster_name = get_kommander_config()
     print(f"\nKommander Cluster Name: {kommander_cluster_name}")
@@ -258,8 +257,6 @@ if __name__ == "__main__":
     # Get the list of clusters
     clusters = get_clusters()
 
-    html_output = ""
-
     # First, fetch and print the Kommander cluster details
     kommander_cluster = next((cluster for cluster in clusters if cluster['clustername'] == kommander_cluster_name), None)
     if kommander_cluster:
@@ -267,7 +264,7 @@ if __name__ == "__main__":
         cluster_name = kommander_cluster["clustername"]
         print(f"\nFetching YAML for Kommander cluster '{cluster_name}' in namespace '{namespace}'...")
         cluster_yaml = get_cluster_yaml(namespace, cluster_name)
-        html_output += generate_html_table(cluster_name, cluster_yaml)
+        print_cluster_details(cluster_name, cluster_yaml)
 
     # Now, process the remaining clusters (excluding Kommander)
     for cluster in clusters:
@@ -276,7 +273,4 @@ if __name__ == "__main__":
             cluster_name = cluster["clustername"]
             print(f"\nFetching YAML for cluster '{cluster_name}' in namespace '{namespace}'...")
             cluster_yaml = get_cluster_yaml(namespace, cluster_name)
-            html_output += generate_html_table(cluster_name, cluster_yaml)
-
-    # Save the HTML output
-    save_html_output(html_output)
+            print_cluster_details(cluster_name, cluster_yaml)
