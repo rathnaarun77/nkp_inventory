@@ -97,6 +97,7 @@ def generate_html_table(cluster_name, cluster_yaml):
     worker_pools = topology.get('workers', {}).get('machineDeployments', [])
 
     kubernetes_version = topology.get('version', 'N/A')
+    provider = cluster_yaml.get('metadata', {}).get('labels', {}).get('cluster.x-k8s.io/provider', 'N/A')
     control_plane_endpoint = cluster_yaml.get('spec', {}).get('controlPlaneEndpoint', {}).get('host', 'N/A')
 
     # Fetch controlPlaneRef for controlplane node identification
@@ -166,6 +167,7 @@ def generate_html_table(cluster_name, cluster_yaml):
 
     html_content = f"<h2>Cluster: {cluster_name}</h2>"
     html_content += f"<table border='1'><tr><th>Kubernetes Version</th><td>{kubernetes_version}</td></tr>"
+    html_content += f"<tr><th>Cluster Provider</th><td>{provider}</td></tr>"
     html_content += f"<tr><th>Control Plane Endpoint</th><td>{control_plane_endpoint}</td></tr>"
     html_content += f"<tr><th>CNI Provider</th><td>{cni_provider}</td></tr>"
     html_content += f"<tr><th>Storage Container</th><td>{storage_container}</td></tr>"
